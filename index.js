@@ -2,15 +2,22 @@ var tessel = require('tessel');
 var climateLib = require('climate-si7005');
 var wifi = require('wifi-cc3000');
 var http = require('http');
+var plotlyLib = require('plotly');
 
 // Config
 var CLIMATE_PORT = 'A';
 var TEMP_UNIT = 'F';
 var FREQUENCY = 5 * 60 * 1000;
 var MAX_STORAGE = 2048;
+var PLOTLY_USERNAME = '';
+var PLOTLY_API_KEY = '';
+var PLOTLY_FILENAME = 'Temperature and Humidity';
 
 // In-memory storage (array of arrays with 0=time, 1=temp, 2=humidity)
 var storage = [];
+
+// Set up connection to plotly for graphing
+var plotly = plotlyLib(PLOTLY_USERNAME, PLOTLY_API_KEY);
 
 
 // Climate module
@@ -33,7 +40,31 @@ climate.on('ready', function () {
 
         console.log('Temperature:', temperature.toFixed(4) + TEMP_UNIT.toUpperCase(), 'Humidity:', humidity.toFixed(4) + '%RH');
 
-        setTimeout(loop, FREQUENCY);
+        var traceTemperature = {
+          x: [currentTime],
+          y: [temperature],
+          type: 'scatter',
+        };
+
+        var traceHumidity = {
+          x: [currentTime],
+          y: [humidity],
+          type: 'scatter',
+        };
+
+        var graphOptions = {
+          filename: PLOTLY_FILENAME,
+          fileopt: 'extend',
+        };
+
+        plotly.plot([traceTemperature, traceHumidity], graphOptions, function(err, msg) {
+          if (err) {
+            console.log('Error logging data to Plotly');
+            console.log(msg);
+          }
+
+          setTimeout(loop, Math.max(0, FREQUENCY - Date.now() + currentTime));
+        });
       });
     });
   });
