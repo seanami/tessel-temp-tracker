@@ -1,0 +1,27 @@
+{
+  "name": "tessel-temp-tracker",
+  "version": "0.0.1",
+  "description": "Track temperature and humidity over time with your Tessel",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seanami/tessel-temp-tracker"
+  },
+  "keywords": [
+    "tessel",
+    "climate",
+    "temperature"
+  ],
+  "author": "Sean McBride (sean@seanmcb.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/seanami/tessel-temp-tracker/issues"
+  },
+  "homepage": "https://github.com/seanami/tessel-temp-tracker",
+  "dependencies": {
+    "tessel": "^0.3.11",
+    "climate-si7005": "^0.1.3"
+  }
+}
