@@ -24,7 +24,7 @@ climate.on('ready', function () {
   setImmediate(function loop () {
     climate.readTemperature(TEMP_UNIT.toLowerCase(), function (err, temperature) {
       climate.readHumidity(function (err, humidity) {
-        var currentTime = Date.now()
+        var currentTime = Date.now();
 
         storage.push([currentTime, temperature, humidity]);
         if (storage.length > MAX_STORAGE) {
