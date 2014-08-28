@@ -20,54 +20,53 @@ var storage = [];
 var plotly = plotlyLib(PLOTLY_USERNAME, PLOTLY_API_KEY);
 
 
-// Climate module
+// Climate tracking and reporting
 
 var climate = climateLib.use(tessel.port[CLIMATE_PORT]);
 
-climate.on('ready', function () {
-  console.log('Connected to climate module');
+function getAndReportClimate() {
+  climate.readTemperature(TEMP_UNIT.toLowerCase(), function (err, temperature) {
+    climate.readHumidity(function (err, humidity) {
+      var currentTime = Date.now();
 
-  // Loop forever
-  setImmediate(function loop () {
-    climate.readTemperature(TEMP_UNIT.toLowerCase(), function (err, temperature) {
-      climate.readHumidity(function (err, humidity) {
-        var currentTime = Date.now();
+      storage.push([currentTime, temperature, humidity]);
+      if (storage.length > MAX_STORAGE) {
+        storage.shift();
+      }
 
-        storage.push([currentTime, temperature, humidity]);
-        if (storage.length > MAX_STORAGE) {
-          storage.shift();
+      console.log('Temperature:', temperature.toFixed(4) + TEMP_UNIT.toUpperCase(), 'Humidity:', humidity.toFixed(4) + '%RH');
+
+      var traceTemperature = {
+        x: [currentTime],
+        y: [temperature],
+        type: 'scatter',
+      };
+
+      var traceHumidity = {
+        x: [currentTime],
+        y: [humidity],
+        type: 'scatter',
+      };
+
+      var graphOptions = {
+        filename: PLOTLY_FILENAME,
+        fileopt: 'extend',
+      };
+
+      plotly.plot([traceTemperature, traceHumidity], graphOptions, function(err) {
+        if (err) {
+          console.log('Error logging data to Plotly');
         }
 
-        console.log('Temperature:', temperature.toFixed(4) + TEMP_UNIT.toUpperCase(), 'Humidity:', humidity.toFixed(4) + '%RH');
-
-        var traceTemperature = {
-          x: [currentTime],
-          y: [temperature],
-          type: 'scatter',
-        };
-
-        var traceHumidity = {
-          x: [currentTime],
-          y: [humidity],
-          type: 'scatter',
-        };
-
-        var graphOptions = {
-          filename: PLOTLY_FILENAME,
-          fileopt: 'extend',
-        };
-
-        plotly.plot([traceTemperature, traceHumidity], graphOptions, function(err, msg) {
-          if (err) {
-            console.log('Error logging data to Plotly');
-            console.log(msg);
-          }
-
-          setTimeout(loop, Math.max(0, FREQUENCY - Date.now() + currentTime));
-        });
+        setTimeout(getAndReportClimate, Math.max(0, FREQUENCY - Date.now() + currentTime));
       });
     });
   });
+};
+
+climate.on('ready', function () {
+  console.log('Connected to climate module');
+  ensureWifi(getAndReportClimate);
 });
 
 climate.on('error', function(err) {
@@ -98,8 +97,15 @@ function setupServer() {
   }).listen(80);
 }
 
-if (wifi.isConnected()) {
-  setupServer();
-} else {
-  wifi.on('connect', setupServer);
+ensureWifi(setupServer);
+
+
+// Wifi helper
+
+function ensureWifi(callback) {
+  if (wifi.isConnected()) {
+    setImmediate(callback);
+  } else {
+    wifi.on('connect', callback);
+  }
 }
