@@ -48,15 +48,22 @@ climate.on('error', function(err) {
 
 function setupServer() {
   http.createServer(function(req, res) {
-    console.log('Serving a webpage');
+    if (req.method === 'GET' && req.url === '/') {
+      console.log('Serving webpage');
 
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.write('Time, Temperature (F), Humidity (%RH)\n')
-    storage.forEach(function(data) {
-      res.write(data[0] + ', ' + data[1].toFixed(2) + ', ' + data[2].toFixed(2) + '\n');
-    });
+      res.writeHead(200, {'Content-Type': 'text/plain'});
+      res.write('Time, Temperature (F), Humidity (%RH)\n');
+      storage.forEach(function(data) {
+        res.write(data[0] + ', ' + data[1].toFixed(2) + ', ' + data[2].toFixed(2) + '\n');
+      });
 
-    res.end();
+      res.end();
+    } else {
+      console.log('Unknown webpage request');
+
+      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.end('Not found\n');
+    }
   }).listen(80);
 }
 
